@@ -316,7 +316,7 @@
           ],
           "prepared_workload_equivalence": "Same source bundle and same tokenizer as the published set: all 8/8 sessions accepted with per-session max_context_tokens identical to the published collection (15494..141269) and the same tokenizer fingerprint. File differences are limited to the local tokenizer path and transformers version metadata.",
           "client_versions": "本 cohort 全部 5 点使用 swe-prefix-reuse 0.1.2 (commit 6861242dbd9f17b707003191e4200b7752911d7c): 沿用 0.1.1 的 cache_salt + X-Correlation-ID 粘性路由, 无 session rotation 扩展 (rotation depth 恒为 1)。",
-          "concurrency_curves_url": "./assets/frontier-qwen35-w8a8-swe-concurrency.svg?v=qwen35-w8a8-swe-curves-20260929",
+          "concurrency_curves_url": "./assets/frontier-qwen35-w8a8-swe-concurrency.svg?v=qwen35-w8a8-swe-curves-20260929-r2",
           "session_rotation": {
             "policy": "per-lane-round-robin",
             "depth_field": "load.session_rotation_depth",
@@ -73097,7 +73097,7 @@
           "prefix_caching": true,
           "enable_chunked_prefill": true,
           "mamba_cache_mode": "align",
-          "gpu_memory_utilization": 0.85,
+          "gpu_memory_utilization": 0.95,
           "cudagraph_mode": "FULL_DECODE_ONLY (请求 FULL, 平台因 AscendGDNAttentionBackend 仅支持 UNIFORM_BATCH 而降级)",
           "max_cudagraph_capture_size": 256,
           "graph_note": "VLLM_USE_BREAKABLE_CUDAGRAPH=0 (Ascend ACL graph, 默认开启)",
@@ -73129,7 +73129,7 @@
           "base_checkpoint_revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
           "benchmark_repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "benchmark_revision": "6861242dbd9f17b707003191e4200b7752911d7c",
-          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.85 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
+          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.95 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --kv-cache-memory-bytes 26038239232 --max-num-batched-tokens 4096 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
           "execution_host": "local",
           "physical_devices": [
             0,
@@ -73145,23 +73145,26 @@
             "capacity_gate": false
           },
           "observed_max_prompt_tokens": 52505,
-          "measured_mean_client_inflight": 0.9992268830486056,
-          "full_client_concurrency_fraction": 0.9992268830486056,
+          "measured_mean_client_inflight": 0.9994214387341506,
+          "full_client_concurrency_fraction": 0.9994214387341506,
           "comparison_scope": "W8A8 cohort 内的 real-MTP2 并发曲线单点 (同一 series 内仅客户端 C 变化); 与 BF16 cohort 的差异是精度口径差异, 不是 MOD 加速; C16 为 max-num-seqs=16 的饱和点; 不做重复性估计",
-          "max_num_seqs": 16
+          "max_num_seqs": 16,
+          "kv_cache_memory_bytes": 26038239232,
+          "max_num_batched_tokens": 4096,
+          "caliber_note": "服务口径已修复: gpu_memory_utilization=0.95 / kv_cache_memory_bytes=26038239232 / max_num_batched_tokens=4096; r1 (exp10) 批次只显式给了 gpu_memory_utilization=0.85, kv_cache_memory_bytes 与 max_num_batched_tokens 走引擎默认, 实测调度器每步只跑 1 个请求 (num_requests_running ≡ 1 / waiting = C-1), 吞吐在 C1 即饱和, 故 r1 的 5 档数值不构成并发曲线结论, 已由本 r2 曲线替换。客户端/协议/prepared workload/硬件与 r1 逐字节相同, 仅服务端这 3 个服务参数的口径不同 (1 个改值 + 2 个由引擎默认改为显式固化)。"
         }
       },
       "load": {
         "concurrency": 1,
         "unit": "continuously replenished in-flight HTTP request lanes",
-        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r1",
+        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r2",
         "session_rotation_depth": 1
       },
       "metrics": {
-        "decode_p90_tps": 99.84052568521211,
-        "output_tps": 84.8,
-        "ttft_p95_ms": 1101.2576234526932,
-        "completed_requests": 142
+        "decode_p90_tps": 101.8974206245061,
+        "output_tps": 91.57555555555555,
+        "ttft_p95_ms": 746.7738680541514,
+        "completed_requests": 147
       },
       "evidence": {
         "status": "measured",
@@ -73170,16 +73173,16 @@
         "tuning_complete": false,
         "url": "https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-QWEN35-W8A8-SWE-PREFIX.md",
         "run_ids": [
-          "8744ad50f30942acadbcf82308ef3cc8"
+          "7b2a60c013254a9e9e34f23149601ef9"
         ],
-        "aggregation": "One unpooled 900s closed-loop SWE observation at client C1 (real MTP2); fixed window streamed-token accounting, in-flight drain excluded",
+        "aggregation": "One unpooled 900s closed-loop SWE observation at client C1 (real MTP2); count actual output tokens received inside the window, drain only already in-flight requests; no post-window token credit",
         "benchmark_protocol": {
           "protocol_id": "swe-prefix-reuse/v1",
           "repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "revision": "6861242dbd9f17b707003191e4200b7752911d7c",
           "prepared_workload_sha256": "ac1fbf9885076c369fd25c5525d1163ff8b7945972cdf4c0c6d2d523ab7c1172",
           "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
-          "campaign": "qwen35-w8a8-swe-curves-20260929"
+          "campaign": "qwen35-w8a8-swe-curves-20260929-r2"
         },
         "sampling_date_utc": "2026-09-29",
         "sampling_date_source": "SWE client.started_at_unix"
@@ -73213,7 +73216,7 @@
           "prefix_caching": true,
           "enable_chunked_prefill": true,
           "mamba_cache_mode": "align",
-          "gpu_memory_utilization": 0.85,
+          "gpu_memory_utilization": 0.95,
           "cudagraph_mode": "FULL_DECODE_ONLY (请求 FULL, 平台因 AscendGDNAttentionBackend 仅支持 UNIFORM_BATCH 而降级)",
           "max_cudagraph_capture_size": 256,
           "graph_note": "VLLM_USE_BREAKABLE_CUDAGRAPH=0 (Ascend ACL graph, 默认开启)",
@@ -73245,7 +73248,7 @@
           "base_checkpoint_revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
           "benchmark_repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "benchmark_revision": "6861242dbd9f17b707003191e4200b7752911d7c",
-          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.85 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
+          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.95 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --kv-cache-memory-bytes 26038239232 --max-num-batched-tokens 4096 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
           "execution_host": "local",
           "physical_devices": [
             0,
@@ -73260,24 +73263,27 @@
             "fresh_measured_session_salts": true,
             "capacity_gate": false
           },
-          "observed_max_prompt_tokens": 41173,
-          "measured_mean_client_inflight": 1.999425432180158,
-          "full_client_concurrency_fraction": 0.9994255590925201,
+          "observed_max_prompt_tokens": 64999,
+          "measured_mean_client_inflight": 1.9990592908062454,
+          "full_client_concurrency_fraction": 0.9990594389972588,
           "comparison_scope": "W8A8 cohort 内的 real-MTP2 并发曲线单点 (同一 series 内仅客户端 C 变化); 与 BF16 cohort 的差异是精度口径差异, 不是 MOD 加速; C16 为 max-num-seqs=16 的饱和点; 不做重复性估计",
-          "max_num_seqs": 16
+          "max_num_seqs": 16,
+          "kv_cache_memory_bytes": 26038239232,
+          "max_num_batched_tokens": 4096,
+          "caliber_note": "服务口径已修复: gpu_memory_utilization=0.95 / kv_cache_memory_bytes=26038239232 / max_num_batched_tokens=4096; r1 (exp10) 批次只显式给了 gpu_memory_utilization=0.85, kv_cache_memory_bytes 与 max_num_batched_tokens 走引擎默认, 实测调度器每步只跑 1 个请求 (num_requests_running ≡ 1 / waiting = C-1), 吞吐在 C1 即饱和, 故 r1 的 5 档数值不构成并发曲线结论, 已由本 r2 曲线替换。客户端/协议/prepared workload/硬件与 r1 逐字节相同, 仅服务端这 3 个服务参数的口径不同 (1 个改值 + 2 个由引擎默认改为显式固化)。"
         }
       },
       "load": {
         "concurrency": 2,
         "unit": "continuously replenished in-flight HTTP request lanes",
-        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r1",
+        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r2",
         "session_rotation_depth": 1
       },
       "metrics": {
-        "decode_p90_tps": 100.45012099250498,
-        "output_tps": 87.4888888888889,
-        "ttft_p95_ms": 22518.067327700537,
-        "completed_requests": 137
+        "decode_p90_tps": 87.22651490874364,
+        "output_tps": 144.1822222222222,
+        "ttft_p95_ms": 1231.396270915866,
+        "completed_requests": 196
       },
       "evidence": {
         "status": "measured",
@@ -73286,16 +73292,16 @@
         "tuning_complete": false,
         "url": "https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-QWEN35-W8A8-SWE-PREFIX.md",
         "run_ids": [
-          "714539ad4e0d42d5bbda6bf0e2dbc3dc"
+          "52c1596158774686bf186968bc40907e"
         ],
-        "aggregation": "One unpooled 900s closed-loop SWE observation at client C2 (real MTP2); fixed window streamed-token accounting, in-flight drain excluded",
+        "aggregation": "One unpooled 900s closed-loop SWE observation at client C2 (real MTP2); count actual output tokens received inside the window, drain only already in-flight requests; no post-window token credit",
         "benchmark_protocol": {
           "protocol_id": "swe-prefix-reuse/v1",
           "repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "revision": "6861242dbd9f17b707003191e4200b7752911d7c",
           "prepared_workload_sha256": "ac1fbf9885076c369fd25c5525d1163ff8b7945972cdf4c0c6d2d523ab7c1172",
           "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
-          "campaign": "qwen35-w8a8-swe-curves-20260929"
+          "campaign": "qwen35-w8a8-swe-curves-20260929-r2"
         },
         "sampling_date_utc": "2026-09-29",
         "sampling_date_source": "SWE client.started_at_unix"
@@ -73329,7 +73335,7 @@
           "prefix_caching": true,
           "enable_chunked_prefill": true,
           "mamba_cache_mode": "align",
-          "gpu_memory_utilization": 0.85,
+          "gpu_memory_utilization": 0.95,
           "cudagraph_mode": "FULL_DECODE_ONLY (请求 FULL, 平台因 AscendGDNAttentionBackend 仅支持 UNIFORM_BATCH 而降级)",
           "max_cudagraph_capture_size": 256,
           "graph_note": "VLLM_USE_BREAKABLE_CUDAGRAPH=0 (Ascend ACL graph, 默认开启)",
@@ -73361,7 +73367,7 @@
           "base_checkpoint_revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
           "benchmark_repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "benchmark_revision": "6861242dbd9f17b707003191e4200b7752911d7c",
-          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.85 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
+          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.95 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --kv-cache-memory-bytes 26038239232 --max-num-batched-tokens 4096 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
           "execution_host": "local",
           "physical_devices": [
             0,
@@ -73376,24 +73382,27 @@
             "fresh_measured_session_salts": true,
             "capacity_gate": false
           },
-          "observed_max_prompt_tokens": 41173,
-          "measured_mean_client_inflight": 3.9993062807857576,
-          "full_client_concurrency_fraction": 0.9993097832819654,
+          "observed_max_prompt_tokens": 73616,
+          "measured_mean_client_inflight": 3.997857201555744,
+          "full_client_concurrency_fraction": 0.9978606452275481,
           "comparison_scope": "W8A8 cohort 内的 real-MTP2 并发曲线单点 (同一 series 内仅客户端 C 变化); 与 BF16 cohort 的差异是精度口径差异, 不是 MOD 加速; C16 为 max-num-seqs=16 的饱和点; 不做重复性估计",
-          "max_num_seqs": 16
+          "max_num_seqs": 16,
+          "kv_cache_memory_bytes": 26038239232,
+          "max_num_batched_tokens": 4096,
+          "caliber_note": "服务口径已修复: gpu_memory_utilization=0.95 / kv_cache_memory_bytes=26038239232 / max_num_batched_tokens=4096; r1 (exp10) 批次只显式给了 gpu_memory_utilization=0.85, kv_cache_memory_bytes 与 max_num_batched_tokens 走引擎默认, 实测调度器每步只跑 1 个请求 (num_requests_running ≡ 1 / waiting = C-1), 吞吐在 C1 即饱和, 故 r1 的 5 档数值不构成并发曲线结论, 已由本 r2 曲线替换。客户端/协议/prepared workload/硬件与 r1 逐字节相同, 仅服务端这 3 个服务参数的口径不同 (1 个改值 + 2 个由引擎默认改为显式固化)。"
         }
       },
       "load": {
         "concurrency": 4,
         "unit": "continuously replenished in-flight HTTP request lanes",
-        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r1",
+        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r2",
         "session_rotation_depth": 1
       },
       "metrics": {
-        "decode_p90_tps": 100.37131641341367,
-        "output_tps": 83.15444444444445,
-        "ttft_p95_ms": 44585.067170858354,
-        "completed_requests": 145
+        "decode_p90_tps": 74.07758846644161,
+        "output_tps": 219.08,
+        "ttft_p95_ms": 1525.2567555755377,
+        "completed_requests": 325
       },
       "evidence": {
         "status": "measured",
@@ -73402,16 +73411,16 @@
         "tuning_complete": false,
         "url": "https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-QWEN35-W8A8-SWE-PREFIX.md",
         "run_ids": [
-          "470b58650df34ea8b069c540f8774423"
+          "b3bcd89a7ba344b0bd434967c286a1bf"
         ],
-        "aggregation": "One unpooled 900s closed-loop SWE observation at client C4 (real MTP2); fixed window streamed-token accounting, in-flight drain excluded",
+        "aggregation": "One unpooled 900s closed-loop SWE observation at client C4 (real MTP2); count actual output tokens received inside the window, drain only already in-flight requests; no post-window token credit",
         "benchmark_protocol": {
           "protocol_id": "swe-prefix-reuse/v1",
           "repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "revision": "6861242dbd9f17b707003191e4200b7752911d7c",
           "prepared_workload_sha256": "ac1fbf9885076c369fd25c5525d1163ff8b7945972cdf4c0c6d2d523ab7c1172",
           "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
-          "campaign": "qwen35-w8a8-swe-curves-20260929"
+          "campaign": "qwen35-w8a8-swe-curves-20260929-r2"
         },
         "sampling_date_utc": "2026-09-29",
         "sampling_date_source": "SWE client.started_at_unix"
@@ -73445,7 +73454,7 @@
           "prefix_caching": true,
           "enable_chunked_prefill": true,
           "mamba_cache_mode": "align",
-          "gpu_memory_utilization": 0.85,
+          "gpu_memory_utilization": 0.95,
           "cudagraph_mode": "FULL_DECODE_ONLY (请求 FULL, 平台因 AscendGDNAttentionBackend 仅支持 UNIFORM_BATCH 而降级)",
           "max_cudagraph_capture_size": 256,
           "graph_note": "VLLM_USE_BREAKABLE_CUDAGRAPH=0 (Ascend ACL graph, 默认开启)",
@@ -73477,7 +73486,7 @@
           "base_checkpoint_revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
           "benchmark_repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "benchmark_revision": "6861242dbd9f17b707003191e4200b7752911d7c",
-          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.85 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
+          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.95 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --kv-cache-memory-bytes 26038239232 --max-num-batched-tokens 4096 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
           "execution_host": "local",
           "physical_devices": [
             0,
@@ -73492,24 +73501,27 @@
             "fresh_measured_session_salts": true,
             "capacity_gate": false
           },
-          "observed_max_prompt_tokens": 43215,
-          "measured_mean_client_inflight": 7.999528976282519,
-          "full_client_concurrency_fraction": 0.9995497934302936,
+          "observed_max_prompt_tokens": 82121,
+          "measured_mean_client_inflight": 7.99698451755258,
+          "full_client_concurrency_fraction": 0.9970053289106323,
           "comparison_scope": "W8A8 cohort 内的 real-MTP2 并发曲线单点 (同一 series 内仅客户端 C 变化); 与 BF16 cohort 的差异是精度口径差异, 不是 MOD 加速; C16 为 max-num-seqs=16 的饱和点; 不做重复性估计",
-          "max_num_seqs": 16
+          "max_num_seqs": 16,
+          "kv_cache_memory_bytes": 26038239232,
+          "max_num_batched_tokens": 4096,
+          "caliber_note": "服务口径已修复: gpu_memory_utilization=0.95 / kv_cache_memory_bytes=26038239232 / max_num_batched_tokens=4096; r1 (exp10) 批次只显式给了 gpu_memory_utilization=0.85, kv_cache_memory_bytes 与 max_num_batched_tokens 走引擎默认, 实测调度器每步只跑 1 个请求 (num_requests_running ≡ 1 / waiting = C-1), 吞吐在 C1 即饱和, 故 r1 的 5 档数值不构成并发曲线结论, 已由本 r2 曲线替换。客户端/协议/prepared workload/硬件与 r1 逐字节相同, 仅服务端这 3 个服务参数的口径不同 (1 个改值 + 2 个由引擎默认改为显式固化)。"
         }
       },
       "load": {
         "concurrency": 8,
         "unit": "continuously replenished in-flight HTTP request lanes",
-        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r1",
+        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r2",
         "session_rotation_depth": 1
       },
       "metrics": {
-        "decode_p90_tps": 99.81256159038566,
-        "output_tps": 86.36777777777777,
-        "ttft_p95_ms": 110298.66517707705,
-        "completed_requests": 141
+        "decode_p90_tps": 63.7543244052327,
+        "output_tps": 335.84,
+        "ttft_p95_ms": 1793.2652677409349,
+        "completed_requests": 480
       },
       "evidence": {
         "status": "measured",
@@ -73518,16 +73530,16 @@
         "tuning_complete": false,
         "url": "https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-QWEN35-W8A8-SWE-PREFIX.md",
         "run_ids": [
-          "b59f65d4d087450cbfef3e3236cab022"
+          "37e3a43cfd3b427c8c25db560725d0e5"
         ],
-        "aggregation": "One unpooled 900s closed-loop SWE observation at client C8 (real MTP2); fixed window streamed-token accounting, in-flight drain excluded",
+        "aggregation": "One unpooled 900s closed-loop SWE observation at client C8 (real MTP2); count actual output tokens received inside the window, drain only already in-flight requests; no post-window token credit",
         "benchmark_protocol": {
           "protocol_id": "swe-prefix-reuse/v1",
           "repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "revision": "6861242dbd9f17b707003191e4200b7752911d7c",
           "prepared_workload_sha256": "ac1fbf9885076c369fd25c5525d1163ff8b7945972cdf4c0c6d2d523ab7c1172",
           "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
-          "campaign": "qwen35-w8a8-swe-curves-20260929"
+          "campaign": "qwen35-w8a8-swe-curves-20260929-r2"
         },
         "sampling_date_utc": "2026-09-29",
         "sampling_date_source": "SWE client.started_at_unix"
@@ -73561,7 +73573,7 @@
           "prefix_caching": true,
           "enable_chunked_prefill": true,
           "mamba_cache_mode": "align",
-          "gpu_memory_utilization": 0.85,
+          "gpu_memory_utilization": 0.95,
           "cudagraph_mode": "FULL_DECODE_ONLY (请求 FULL, 平台因 AscendGDNAttentionBackend 仅支持 UNIFORM_BATCH 而降级)",
           "max_cudagraph_capture_size": 256,
           "graph_note": "VLLM_USE_BREAKABLE_CUDAGRAPH=0 (Ascend ACL graph, 默认开启)",
@@ -73593,7 +73605,7 @@
           "base_checkpoint_revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
           "benchmark_repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "benchmark_revision": "6861242dbd9f17b707003191e4200b7752911d7c",
-          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.85 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
+          "server_command": "/data/jxd/envs/vllm-hust-v1-cann91/bin/vllm serve /data/jxd/Qwen3.5-35B-A3B-W8A8 --served-model-name qwen35-a3b-w8a8 --tensor-parallel-size 2 --max-model-len 262144 --gpu-memory-utilization 0.95 --trust-remote-code --host 127.0.0.1 --port 8100 --quantization ascend --max-num-seqs 16 --kv-cache-memory-bytes 26038239232 --max-num-batched-tokens 4096 --speculative-config {\"method\":\"mtp\",\"num_speculative_tokens\":2} --compilation-config {\"max_cudagraph_capture_size\":256,\"cudagraph_mode\":\"FULL\"}",
           "execution_host": "local",
           "physical_devices": [
             0,
@@ -73608,24 +73620,27 @@
             "fresh_measured_session_salts": true,
             "capacity_gate": false
           },
-          "observed_max_prompt_tokens": 24758,
-          "measured_mean_client_inflight": 15.999551349449902,
-          "full_client_concurrency_fraction": 0.9996517010819581,
+          "observed_max_prompt_tokens": 64136,
+          "measured_mean_client_inflight": 15.99678158806223,
+          "full_client_concurrency_fraction": 0.9968793663734363,
           "comparison_scope": "W8A8 cohort 内的 real-MTP2 并发曲线单点 (同一 series 内仅客户端 C 变化); 与 BF16 cohort 的差异是精度口径差异, 不是 MOD 加速; C16 为 max-num-seqs=16 的饱和点; 不做重复性估计",
-          "max_num_seqs": 16
+          "max_num_seqs": 16,
+          "kv_cache_memory_bytes": 26038239232,
+          "max_num_batched_tokens": 4096,
+          "caliber_note": "服务口径已修复: gpu_memory_utilization=0.95 / kv_cache_memory_bytes=26038239232 / max_num_batched_tokens=4096; r1 (exp10) 批次只显式给了 gpu_memory_utilization=0.85, kv_cache_memory_bytes 与 max_num_batched_tokens 走引擎默认, 实测调度器每步只跑 1 个请求 (num_requests_running ≡ 1 / waiting = C-1), 吞吐在 C1 即饱和, 故 r1 的 5 档数值不构成并发曲线结论, 已由本 r2 曲线替换。客户端/协议/prepared workload/硬件与 r1 逐字节相同, 仅服务端这 3 个服务参数的口径不同 (1 个改值 + 2 个由引擎默认改为显式固化)。"
         }
       },
       "load": {
         "concurrency": 16,
         "unit": "continuously replenished in-flight HTTP request lanes",
-        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r1",
+        "concurrency_series": "swe-w8a8-tp2-20260929-mtp2-r2",
         "session_rotation_depth": 1
       },
       "metrics": {
-        "decode_p90_tps": 99.14805231134774,
-        "output_tps": 84.68222222222222,
-        "ttft_p95_ms": 165298.69577847427,
-        "completed_requests": 163
+        "decode_p90_tps": 39.39539913891425,
+        "output_tps": 440.8688888888889,
+        "ttft_p95_ms": 2571.6895901598023,
+        "completed_requests": 663
       },
       "evidence": {
         "status": "measured",
@@ -73634,16 +73649,16 @@
         "tuning_complete": false,
         "url": "https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-QWEN35-W8A8-SWE-PREFIX.md",
         "run_ids": [
-          "648923143cdb42718fa5b9b8d9e84790"
+          "c6dc00b19a5d4f25b718d69439527087"
         ],
-        "aggregation": "One unpooled 900s closed-loop SWE observation at client C16 (real MTP2); fixed window streamed-token accounting, in-flight drain excluded",
+        "aggregation": "One unpooled 900s closed-loop SWE observation at client C16 (real MTP2); count actual output tokens received inside the window, drain only already in-flight requests; no post-window token credit",
         "benchmark_protocol": {
           "protocol_id": "swe-prefix-reuse/v1",
           "repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
           "revision": "6861242dbd9f17b707003191e4200b7752911d7c",
           "prepared_workload_sha256": "ac1fbf9885076c369fd25c5525d1163ff8b7945972cdf4c0c6d2d523ab7c1172",
           "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
-          "campaign": "qwen35-w8a8-swe-curves-20260929"
+          "campaign": "qwen35-w8a8-swe-curves-20260929-r2"
         },
         "sampling_date_utc": "2026-09-29",
         "sampling_date_source": "SWE client.started_at_unix"

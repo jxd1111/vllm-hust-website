@@ -17,7 +17,9 @@ def frontier():
 
 
 def swe_evidence():
-    return json.loads((ROOT / "data/leaderboard_frontier_swe_evidence.json").read_text())
+    return json.loads(
+        (ROOT / "data/leaderboard_frontier_swe_evidence.json").read_text()
+    )
 
 
 def w8a8_points(data, renderer):
@@ -35,9 +37,10 @@ def test_published_w8a8_swe_curve_matches_the_measured_series():
     renderer = load_renderer()
     data = frontier()
     rendered = renderer["render"](data)
-    assert rendered == (
-        ROOT / "assets/frontier-qwen35-w8a8-swe-concurrency.svg"
-    ).read_text()
+    assert (
+        rendered
+        == (ROOT / "assets/frontier-qwen35-w8a8-swe-concurrency.svg").read_text()
+    )
     ids = {
         node.attrib["data-point"]
         for node in ET.fromstring(rendered).iter()
@@ -48,9 +51,7 @@ def test_published_w8a8_swe_curve_matches_the_measured_series():
 
 def test_w8a8_curve_declares_its_svg_on_the_cohort_contract():
     renderer = load_renderer()
-    cohort = next(
-        c for c in frontier()["cohorts"] if c["id"] == renderer["COHORT"]
-    )
+    cohort = next(c for c in frontier()["cohorts"] if c["id"] == renderer["COHORT"])
     url = cohort["workload"]["contract"]["concurrency_curves_url"]
     assert url.startswith("./assets/frontier-qwen35-w8a8-swe-concurrency.svg?v=")
     assert (ROOT / url.split("?")[0].lstrip("./")).is_file()
@@ -71,7 +72,8 @@ def test_w8a8_swe_curve_covers_c1_through_c16_on_one_series():
         assert params["mtp_draft_tokens"] == 2
         assert params["max_num_seqs"] == 16
         assert params["quantization"] == "ascend"
-        assert params["gpu_memory_utilization"] == 0.85
+        for key, expected in renderer["CALIBER"].items():
+            assert params[key] == expected, (key, params[key], expected)
         assert params["qualification"]["concurrency"] == point["load"]["concurrency"]
         assert params["qualification"]["measurement_seconds"] == 60
 
@@ -129,3 +131,13 @@ def test_w8a8_c16_point_is_its_own_saturated_900s_window():
         assert row["summary"]["measurement_seconds"] == 900
         assert row["summary"]["failed_requests"] == 0
         assert row["metrics"] == point["metrics"]
+
+
+def test_w8a8_r1_caliber_broken_series_is_no_longer_published():
+    """r1 曲线 (服务端每步只跑 1 个请求) 的 5 档数值不得留在站点数据里。"""
+    stale = [
+        point["id"]
+        for point in frontier()["points"]
+        if point["load"].get("concurrency_series") == "swe-w8a8-tp2-20260929-mtp2-r1"
+    ]
+    assert stale == []

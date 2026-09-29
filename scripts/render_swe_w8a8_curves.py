@@ -2,10 +2,11 @@
 """Render the measured W8A8 SWE prefix-reuse concurrency tradeoff (C1..C16).
 
 与 scripts/render_swe_frontier_curves.py 的区别: 该脚本按 BF16 cohort 渲染并使用
-`kv_cache_memory_bytes` (BF16 服务显式指定 KV 字节预算) 作为恒定量断言; W8A8 服务
-没有该参数, 恒定量是 gpu_memory_utilization + 量化/权重身份 + MTP 档位。因此本
-脚本独立渲染 W8A8 cohort, 并使用 W8A8 实际存在的参数键做"同一曲线内服务设置
-逐项一致"的断言。
+`kv_cache_memory_bytes` 作为恒定量断言。W8A8 曲线是口径修复后的重跑 (series r2):
+r1 批次的服务命令只显式给了 gpu_memory_utilization 0.85, kv_cache_memory_bytes 与
+max_num_batched_tokens 走引擎默认, 服务端每步只跑 1 个请求, 5 档数值不构成并发曲线结论。
+因此本脚本独立渲染 W8A8 cohort, 并把修复后的 3 个 flag 与量化/权重身份、MTP 档位、
+startx 命令一起作为"同一曲线内服务设置逐项一致"的断言 (CALIBER + FIXED)。
 """
 
 import json
@@ -15,8 +16,16 @@ from pathlib import Path
 
 SITE = Path(__file__).resolve().parents[1]
 COHORT = "qwen35-35b-a3b-w8a8-sweprefix-smoke-v1"
-SERIES = "swe-w8a8-tp2-20260929-mtp2-r1"
+SERIES = "swe-w8a8-tp2-20260929-mtp2-r2"
 MTP_MOD = "ascend-mtp-contract-2patch"
+# 口径修复后的 W8A8 服务恒定量: r1 批次的服务命令显式给了 gpu-memory-utilization 0.85,
+# 但未显式指定 kv-cache-memory-bytes 与 max-num-batched-tokens (走引擎默认), 实测服务端
+# num_requests_running ≡ 1 / num_requests_waiting = C-1; r2 把这三个量固化为同一曲线内的显式常量。
+CALIBER = {
+    "gpu_memory_utilization": 0.95,
+    "kv_cache_memory_bytes": 26038239232,
+    "max_num_batched_tokens": 4096,
+}
 
 # 同一 concurrency_series 内必须逐项相同的服务/口径设置 (W8A8 cohort 的实际键)
 FIXED = (
@@ -54,6 +63,10 @@ FIXED = (
     "execution_host",
     "physical_devices",
     "transport",
+    "kv_cache_memory_bytes",
+    "max_num_batched_tokens",
+    "caliber_note",
+    "server_command",
 )
 
 
@@ -114,9 +127,12 @@ def render(snapshot):
             assert all(params.get(key) == reference.get(key) for key in FIXED), (
                 "Mixed serving settings within a W8A8 concurrency line"
             )
-            assert params["tensor_parallel_size"] == 2 and params["mtp_draft_tokens"] == 2
+            assert (
+                params["tensor_parallel_size"] == 2 and params["mtp_draft_tokens"] == 2
+            )
             assert params["max_num_seqs"] == 16
-            assert params["gpu_memory_utilization"] == 0.85
+            for key, expected in CALIBER.items():
+                assert params[key] == expected, (key, params[key], expected)
             assert params["quantization"] == "ascend"
             assert params["mods"] == mods
             assert p["configuration"]["hardware"]["accelerator_count"] == 2
@@ -147,7 +163,7 @@ def render(snapshot):
             '<text x="495" y="496" text-anchor="middle" font-size="16">P90 request decode speed · output tokens/s</text>',
             '<text transform="translate(25 280) rotate(-90)" text-anchor="middle" font-size="16">Output tokens/s/chip</text>',
             '<text x="60" y="532" font-size="13">Lines connect measured client C levels, not a fitted curve or the combined Pareto frontier. Missing points are pending.</text>',
-            '<text x="60" y="554" font-size="13">One server instance per line; max-num-seqs 16 equals the C16 offered load, so C16 is the saturation seat count, not beyond-capacity. W8A8 vs BF16 differs in precision: no equal-KV or cross-precision speedup claim.</text>',
+            '<text x="60" y="554" font-size="13">One server instance per line; max-num-seqs 16 equals the C16 offered load, so C16 is the saturation seat count, not beyond-capacity. This series is the r2 re-run with explicit gpu-memory-utilization / kv-cache-memory-bytes / max-num-batched-tokens; W8A8 vs BF16 differs in precision, so no cross-precision speedup claim.</text>',
             "</g></svg>",
         ]
     )
