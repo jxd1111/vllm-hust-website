@@ -23,11 +23,11 @@ def main():
             executable_path=os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE")
         )
         context = browser.new_context()
-        response = context.request.get(f"{args.url}/data/midterm-v086.json")
+        response = context.request.get(f"{args.url}/data/midterm-v099.json")
         assert response.ok
         raw = response.body()
         report = json.loads(raw)
-        assert report["version"] == "V0.86"
+        assert report["version"] == "V0.99"
         manifest_response = context.request.get(
             f"{args.url}/data/benchmark-source-manifest.json"
         )
@@ -36,7 +36,7 @@ def main():
         entry = next(
             f
             for f in manifest["files"]
-            if f["website_path"] == "data/midterm-v086.json"
+            if f["website_path"] == "data/midterm-v099.json"
         )
         assert hashlib.sha256(raw).hexdigest() == entry["sha256"]
         assert len(raw) == entry["bytes"]
@@ -82,17 +82,95 @@ def main():
                         page.locator('script[src*="midterm-report.js"]')
                     ).to_have_attribute(
                         "src",
-                        "./assets/midterm-report.js?v=midterm-v086-quality-20261026",
+                        "./assets/midterm-report.js?v=midterm-v099-quality-20261027",
                     )
                     expect(page.locator("#midterm-report")).to_have_attribute(
-                        "data-loaded", "V0.86", timeout=30000
+                        "data-loaded", "V0.99", timeout=30000
                     )
                     page.evaluate("lang => window.vllmHustSite.setLang(lang)", lang)
                     page.locator("#report-details > summary").click()
                     swe = page.locator("#midterm-swe-single-agent-observation")
-                    expect(swe.locator("tbody tr")).to_have_count(3)
-                    expect(swe).to_contain_text("0/3")
+                    expect(swe.locator("tbody tr")).to_have_count(26)
+                    expect(swe).to_contain_text("437.454803")
+                    expect(swe).to_contain_text("Tutanota")
+                    expect(swe).to_contain_text("OperationProgressTracker")
+                    expect(swe).to_contain_text("3/26")
+                    expect(swe).to_contain_text("4/26")
+                    circuit = page.locator("#midterm-terminal-circuit-model")
+                    for value in (
+                        "null",
+                        "5449",
+                        "4096",
+                        "330.919770",
+                        "nop 2/3",
+                        "oracle 3/3",
+                    ):
+                        expect(circuit).to_contain_text(value)
+                    diagnostic = page.locator(
+                        "#midterm-terminal-break-filter-byte-diagnostic"
+                    )
+                    for value in ("41", "20", "ARM64"):
+                        expect(diagnostic).to_contain_text(value)
+                    expect(swe).to_contain_text("533.363336")
+                    expect(swe).to_contain_text("352.834124")
+                    break_filter = page.locator(
+                        "#midterm-terminal-break-filter-controls"
+                    )
+                    expect(break_filter.locator("tbody tr")).to_have_count(0)
+                    expect(break_filter).to_contain_text("null")
+                    expect(break_filter).to_contain_text("3/89")
+                    expect(break_filter).to_contain_text("1200")
+                    expect(swe).to_contain_text("361.464713")
+                    expect(swe).to_contain_text("511.628888")
+                    expect(swe).to_contain_text(
+                        "76次HTTP" if lang == "zh" else "76 HTTP"
+                    )
+                    recovery = page.locator("#midterm-swe-test-source-recovery")
+                    expect(recovery.locator("tbody tr")).to_have_count(3)
+                    expect(recovery).to_contain_text("ABI108")
+                    expect(recovery).to_contain_text("3 / 3")
+                    cython = page.locator("#midterm-terminal-cython-controls")
+                    expect(cython.locator("tbody tr")).to_have_count(4)
+                    expect(cython).to_contain_text("10 / 11")
+                    expect(cython).to_contain_text("11 / 11")
+                    cython_model = page.locator("#midterm-terminal-cython-model")
+                    for value in ("null", "np.int", "96.468339", "9.089041"):
+                        expect(cython_model).to_contain_text(value)
+                    controls = page.locator("#midterm-terminal-arm64-controls")
+                    expect(controls.locator("tbody tr")).to_have_count(2)
+                    expect(controls).to_contain_text("0 / 6")
+                    expect(controls).to_contain_text("6 / 6")
+                    cancel = page.locator("#midterm-terminal-cancel-async-controls")
+                    expect(cancel.locator("tbody tr")).to_have_count(2)
+                    expect(cancel).to_contain_text("0 / 6")
+                    expect(cancel).to_contain_text("6 / 6")
+                    partial = page.locator("#midterm-terminal-cancel-partial-recovery")
+                    expect(partial.locator("tbody tr")).to_have_count(2)
+                    assert partial.locator(".midterm-evidence a").evaluate_all(
+                        "(links, suffix) => links.some(a => a.href.endsWith(suffix))",
+                        "reports/terminal-cancel-async-partial-recovery-20261027/summary.json",
+                    )
+                    for value in (
+                        "1 / 6",
+                        "null",
+                        "4/89",
+                        "85",
+                        "ContextLengthExceededError",
+                    ):
+                        expect(partial).to_contain_text(value)
+                    expect(swe).to_contain_text("511.436103")
+                    recovered = page.locator("#midterm-terminal-model-recovery")
+                    expect(recovered.locator("tbody tr")).to_have_count(2)
+                    expect(recovered).to_contain_text("6 / 6")
+                    expect(recovered).to_contain_text("null")
+                    expect(recovered).to_contain_text("87")
+                    expect(recovered).to_contain_text(
+                        "非现场原文件快照"
+                        if lang == "zh"
+                        else "not an original file snapshot"
+                    )
                     expect(swe).to_contain_text("293.600182")
+                    expect(swe).to_contain_text("225.544925")
                     expect(swe).to_contain_text(
                         "补丁应用未获证明" if lang == "zh" else "Application unproven"
                     )
@@ -183,9 +261,13 @@ def main():
                                 ),
                                 (
                                     2,
-                                    "reports/swe-native018-incremental-20261026/catalog.json",
+                                    "reports/swe-native018-wave2-openlibrary-navidrome-20261027/catalog.json",
                                 ),
                                 (3, inventory[9]["path"]),
+                                (
+                                    4,
+                                    "reports/terminal-circuit-context-20261027/summary.json",
+                                ),
                             ):
                                 href = (
                                     section.locator("table")
@@ -322,7 +404,7 @@ def main():
                         "不能排除完整模型跨轮状态污染"
                     )
                     expect(page.locator("#midterm-report > p a")).to_contain_text(
-                        "V0.86"
+                        "V0.99"
                     )
                     expect(page.locator("#midterm-model-runtime")).to_contain_text(
                         "100.000000%"
@@ -585,7 +667,7 @@ def main():
         page = browser.new_page()
         page.add_init_script("localStorage.setItem('vllm-hust_lang', 'en')")
         page.route(
-            "**/data/midterm-v086.json",
+            "**/data/midterm-v099.json",
             lambda route: route.fulfill(status=503, body="unavailable"),
         )
         page.goto(f"{args.url}/dataset-validation.html")
